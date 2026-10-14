@@ -18,7 +18,8 @@ interface StoredToken {
 
 export const spotifyConfigured = Boolean(CLIENT_ID);
 
-const redirectUri = () => `${window.location.origin}/`;
+// Works at the site root locally and under /Musicology/ on GitHub Pages.
+const redirectUri = () => `${window.location.origin}${window.location.pathname}`;
 
 function randomString(len: number): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';

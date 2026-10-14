@@ -47,6 +47,22 @@ Login uses Authorization Code + PKCE entirely in the browser, with no backend
 and no secret. Apps in Spotify's development mode can only be used by
 allow-listed accounts.
 
+## Hosting on GitHub Pages
+
+`.github/workflows/pages.yml` builds, tests, and deploys on every push to `main`.
+One-time setup:
+
+1. GitHub Pages needs a **public repo**, or a private one on GitHub Pro/Team.
+   Either way the published site itself is public.
+2. Go to repo **Settings → Pages → Build and deployment → Source** and choose
+   **GitHub Actions**.
+3. Push or merge to `main`. The site appears at
+   `https://graemegengras.github.io/Musicology/`.
+
+For Spotify login on the live site, add `https://graemegengras.github.io/Musicology/`
+as a redirect URI in your Spotify app. Then add the Client ID as a repo variable
+named `VITE_SPOTIFY_CLIENT_ID` under Settings → Secrets and variables → Actions → Variables.
+
 ## Project layout
 
 ```

@@ -21,7 +21,7 @@
 }
 
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --bg: #f6f4ee;
     --surface: #ffffff;
     --surface-2: #f0ede4;
@@ -33,6 +33,18 @@
     --spotify: #13a84a;
     color-scheme: light;
   }
+}
+:root[data-theme="light"] {
+  --bg: #f6f4ee;
+  --surface: #ffffff;
+  --surface-2: #f0ede4;
+  --surface-3: #e5e1d5;
+  --border: #dcd7c9;
+  --text: #1d1b26;
+  --muted: #6b6878;
+  --accent: #b8780c;
+  --spotify: #13a84a;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -227,7 +239,7 @@ h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; colo
   flex: none; width: 38px; height: 38px; border-radius: 50%; border: 0; display: grid; place-items: center;
   background: var(--spotify); color: #0b2414; font-size: 0.85rem;
 }
-.play:hover { filter: brightness(1.1); }
+.play:hover { filter: brightness(1.1); text-decoration: none; }
 .play.is-playing { color: #0b2414; }
 .play.placeholder { background: var(--surface-3); color: var(--muted); font-size: 1.1rem; }
 .play.placeholder.off { background: transparent; box-shadow: inset 0 0 0 1.5px var(--muted); }

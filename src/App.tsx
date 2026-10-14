@@ -24,8 +24,9 @@ export interface ActiveTour {
 }
 
 function eraFromHash(): string | null {
-  const m = window.location.hash.match(/^#\/era\/([\w-]+)/);
-  return m && ERA_BY_ID[m[1]] ? m[1] : null;
+  // Plain #<era-id> anchors, so links work on hosts that only pass simple fragments.
+  const id = window.location.hash.replace(/^#\/?(era\/)?/, '');
+  return ERA_BY_ID[id] ? id : null;
 }
 
 export default function App() {
@@ -44,8 +45,13 @@ export default function App() {
 
   // Keep the URL shareable: #/era/<id>
   useEffect(() => {
-    const target = selectedId ? `#/era/${selectedId}` : '#/';
-    if (window.location.hash !== target) window.history.replaceState(null, '', target);
+    const target = selectedId ? `#${selectedId}` : window.location.pathname + window.location.search;
+    if (window.location.hash === (selectedId ? target : '')) return;
+    try {
+      window.history.replaceState(null, '', target);
+    } catch {
+      /* some sandboxed hosts disallow history changes */
+    }
   }, [selectedId]);
 
   useEffect(() => {

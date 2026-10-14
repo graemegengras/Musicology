@@ -13,6 +13,9 @@
   - Tests: data integrity, time scale, layout packing, quiz.
 - Not yet verified: actual Spotify embed playback (Spotify is blocked from the dev sandbox; check in a real browser).
 
+- Added GitHub Pages deploy workflow (on push to main), relative asset paths, plain `#<era-id>` share links, explicit light/dark theme guards.
+  - Waiting on the owner: the repo is private (Pages needs it public or GitHub Pro), Pages source must be set to "GitHub Actions", and the branch must be merged to main.
+
 ## Next ideas
 - Verify the player in a real browser; tune the compact/expanded embed heights.
 - More eras: non-Western traditions (Hindustani/Carnatic, gamelan, Afrobeat, highlife, bossa nova, K-pop, Latin), 2000s+.
