@@ -1,7 +1,6 @@
 /**
- * Piecewise-linear time scale. Music history is lopsided: two thousand years
- * of sparse evidence, then an explosion after recording arrives. Each segment
- * gets its own pixels-per-year so the 20th century has room to breathe.
+ * Piecewise-linear time scale. Starts at the Baroque. Before recording the
+ * map is sparse, so 1600–1850 is compressed and the recording era gets room.
  */
 export interface Segment {
   from: number;
@@ -11,9 +10,8 @@ export interface Segment {
 }
 
 export const SEGMENTS: Segment[] = [
-  { from: -600, to: 1400, pxPerYear: 0.22, tickEvery: 400 },
-  { from: 1400, to: 1850, pxPerYear: 1.5, tickEvery: 50 },
-  { from: 1850, to: 2010, pxPerYear: 11, tickEvery: 10 },
+  { from: 1600, to: 1850, pxPerYear: 2.2, tickEvery: 50 },
+  { from: 1850, to: 2026, pxPerYear: 11, tickEvery: 10 },
 ];
 
 export const MIN_YEAR = SEGMENTS[0].from;
@@ -33,6 +31,18 @@ export function totalWidth(zoom = 1): number {
   return yearToX(MAX_YEAR, zoom);
 }
 
+/** Inverse of yearToX (bisection; the scale is monotonic). */
+export function xToYear(x: number, zoom = 1): number {
+  let lo = MIN_YEAR;
+  let hi = MAX_YEAR;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (yearToX(mid, zoom) < x) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
 export interface Tick {
   year: number;
   x: number;
@@ -49,30 +59,9 @@ export function ticks(zoom = 1): Tick[] {
       out.push({ year: y, x: yearToX(y, zoom), major: y % (step * 2) === 0 || step >= 50 });
     }
   }
-  out.push({ year: MAX_YEAR, x: yearToX(MAX_YEAR, zoom), major: true });
   return out;
 }
 
-export function formatYear(y: number): string {
-  if (y === 0) return '0';
-  if (y < 0) return `${-y} BCE`;
-  if (y < 1000) return `${y} CE`;
-  return String(y);
-}
-
 export function formatSpan(start: number, end: number): string {
-  if (start < 0 && end > 0) return `${-start} BCE – ${end} CE`;
-  return `${formatYear(start)} – ${formatYear(end)}`;
-}
-
-/** Inverse of yearToX (bisection; the scale is monotonic). */
-export function xToYear(x: number, zoom = 1): number {
-  let lo = MIN_YEAR;
-  let hi = MAX_YEAR;
-  for (let i = 0; i < 40; i++) {
-    const mid = (lo + hi) / 2;
-    if (yearToX(mid, zoom) < x) lo = mid;
-    else hi = mid;
-  }
-  return (lo + hi) / 2;
+  return `${start} – ${end >= MAX_YEAR - 1 ? 'today' : end}`;
 }

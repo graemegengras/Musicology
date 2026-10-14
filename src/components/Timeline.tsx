@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ERAS, ERA_BY_ID, LANES } from '../data/eras';
 import type { Era } from '../data/types';
 import { layoutLane, type PlacedEra } from '../lib/layout';
-import { SEGMENTS, formatYear, ticks, totalWidth, xToYear, yearToX } from '../lib/timeScale';
+import { SEGMENTS, ticks, totalWidth, xToYear, yearToX } from '../lib/timeScale';
 import AvailabilityDot from './AvailabilityDot';
 
 interface Props {
@@ -90,21 +90,73 @@ export default function Timeline({ selectedId, onSelect, dimmed, showAllLinks, p
     return () => el.removeEventListener('wheel', onWheel);
   });
 
+  // Click-and-drag panning for mouse and pen (touch already scrolls natively).
+  // A drag past a few pixels swallows the click that ends it.
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    let start: { x: number; y: number; left: number; top: number; id: number } | null = null;
+    let dragged = false;
+    const down = (e: PointerEvent) => {
+      if (e.pointerType === 'touch' || e.button !== 0) return;
+      start = { x: e.clientX, y: e.clientY, left: el.scrollLeft, top: el.scrollTop, id: e.pointerId };
+      dragged = false;
+    };
+    const move = (e: PointerEvent) => {
+      if (!start || e.pointerId !== start.id) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!dragged && Math.hypot(dx, dy) < 5) return;
+      if (!dragged) {
+        dragged = true;
+        el.setPointerCapture(e.pointerId);
+        el.classList.add('dragging');
+      }
+      el.scrollLeft = start.left - dx;
+      el.scrollTop = start.top - dy;
+    };
+    const up = () => {
+      start = null;
+      el.classList.remove('dragging');
+    };
+    const click = (e: MouseEvent) => {
+      if (!dragged) return;
+      dragged = false;
+      e.stopPropagation();
+      e.preventDefault();
+    };
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    el.addEventListener('click', click, true);
+    return () => {
+      el.removeEventListener('pointerdown', down);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+      el.removeEventListener('click', click, true);
+    };
+  }, []);
+
   // Bring the selected era into view.
   useEffect(() => {
     const el = scroller.current;
     const b = selectedId ? boxes.get(selectedId) : null;
     if (!el || !b) return;
     const visibleLeft = el.scrollLeft + PAD_X;
-    const visibleRight = el.scrollLeft + el.clientWidth;
+    // The detail drawer covers the right side on desktop (and the bottom on phones).
+    const wide = window.innerWidth > 900;
+    const drawerW = wide ? Math.min(400, el.clientWidth) : 0;
+    const visibleRight = el.scrollLeft + el.clientWidth - drawerW;
     const visibleTop = el.scrollTop + AXIS_H;
-    const visibleBottom = el.scrollTop + el.clientHeight;
+    const visibleBottom = el.scrollTop + el.clientHeight * (wide ? 1 : 0.38);
     const inX = b.left >= visibleLeft && b.left + Math.min(b.width, 240) <= visibleRight;
     const inY = b.top >= visibleTop && b.top + ROW_H <= visibleBottom;
     if (inX && inY) return;
     el.scrollTo({
-      left: inX ? el.scrollLeft : Math.max(0, b.left - PAD_X - el.clientWidth * 0.25),
-      top: inY ? el.scrollTop : Math.max(0, b.top - AXIS_H - el.clientHeight * 0.3),
+      left: inX ? el.scrollLeft : Math.max(0, b.left - PAD_X - (el.clientWidth - drawerW - PAD_X) * 0.3),
+      top: inY ? el.scrollTop : Math.max(0, b.top - AXIS_H - el.clientHeight * (wide ? 0.3 : 0.1)),
       behavior: 'smooth',
     });
     // Only when the selection changes, not on zoom.
@@ -156,7 +208,7 @@ export default function Timeline({ selectedId, onSelect, dimmed, showAllLinks, p
               style={{ left: PAD_X + yearToX(s.from, zoom), width: yearToX(s.to, zoom) - yearToX(s.from, zoom), height }}
             >
               <span className="segment-label">
-                {i < SEGMENTS.length - 1 ? `compressed · 1px ≈ ${Math.round(1 / (s.pxPerYear * zoom))} yr` : 'the recording era'}
+                {i === 0 ? 'before recording · compressed' : 'the recording era'}
               </span>
             </div>
           ))}
@@ -164,7 +216,7 @@ export default function Timeline({ selectedId, onSelect, dimmed, showAllLinks, p
           <div className="axis" style={{ width }}>
             {ticks(zoom).map((t) => (
               <div key={t.year} className={`tick ${t.major ? 'major' : ''}`} style={{ left: PAD_X + t.x }}>
-                {t.major && <span>{formatYear(t.year)}</span>}
+                {t.major && <span>{t.year}</span>}
               </div>
             ))}
           </div>
@@ -196,7 +248,7 @@ export default function Timeline({ selectedId, onSelect, dimmed, showAllLinks, p
                 className={`era ${isSel ? 'selected' : ''} ${faded ? 'faded' : ''} ${playingEraId === b.era.id ? 'playing' : ''}`}
                 style={{ left: b.left, top: b.top, width: b.width, ['--lane' as string]: lane.color }}
                 onClick={() => onSelect(b.era.id)}
-                title={`${b.era.title} (${formatYear(b.era.start)}–${formatYear(b.era.end)})`}
+                title={`${b.era.title} (${b.era.start}–${b.era.end})`}
               >
                 <span className="era-span" style={{ width: b.spanWidth }} />
                 <span className="era-label">

@@ -4,10 +4,9 @@ import { TOURS } from './data/tours';
 import type { Listen, SpotifyRef } from './data/types';
 import Timeline from './components/Timeline';
 import EraPanel from './components/EraPanel';
-import Welcome from './components/Welcome';
 import Player from './components/Player';
 import TourBar from './components/TourBar';
-import Quiz from './components/Quiz';
+import ToursMenu from './components/ToursMenu';
 import Search from './components/Search';
 import SpotifyButton from './components/SpotifyButton';
 
@@ -33,7 +32,6 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(eraFromHash);
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [tour, setTour] = useState<ActiveTour | null>(null);
-  const [quizOpen, setQuizOpen] = useState(false);
   const [offSpotifyOnly, setOffSpotifyOnly] = useState(false);
   const [showAllLinks, setShowAllLinks] = useState(false);
   const panel = useRef<HTMLElement>(null);
@@ -42,6 +40,13 @@ export default function App() {
   useEffect(() => {
     panel.current?.scrollTo({ top: 0 });
   }, [selectedId]);
+
+  // Esc closes the detail drawer.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSelectedId(null);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Keep the URL shareable: #/era/<id>
   useEffect(() => {
@@ -109,7 +114,7 @@ export default function App() {
             <input type="checkbox" checked={showAllLinks} onChange={(e) => setShowAllLinks(e.target.checked)} />
             <span>All links</span>
           </label>
-          <button className="btn" onClick={() => setQuizOpen(true)}>Quiz</button>
+          <ToursMenu onStart={startTour} />
           <SpotifyButton />
         </div>
       </header>
@@ -134,8 +139,8 @@ export default function App() {
           />
         </section>
 
-        <aside className="panel" ref={panel}>
-          {selected ? (
+        {selected && (
+          <aside className="drawer" ref={panel}>
             <EraPanel
               key={selected.id}
               era={selected}
@@ -144,15 +149,11 @@ export default function App() {
               nowPlaying={nowPlaying}
               onClose={() => select(null)}
             />
-          ) : (
-            <Welcome onStartTour={startTour} onSelect={select} />
-          )}
-        </aside>
+          </aside>
+        )}
       </main>
 
       <Player nowPlaying={nowPlaying} onClose={() => setNowPlaying(null)} onShowEra={select} />
-
-      {quizOpen && <Quiz onClose={() => setQuizOpen(false)} onExplore={(id) => { setQuizOpen(false); select(id); }} />}
     </div>
   );
 }
