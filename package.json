@@ -9,7 +9,8 @@
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "import-library": "node --experimental-strip-types scripts/import-library.ts"
+    "import-library": "node --experimental-strip-types scripts/import-library.ts",
+    "build-graph": "NODE_USE_ENV_PROXY=1 node --experimental-strip-types --no-warnings scripts/build-graph.ts"
   },
   "dependencies": {
     "react": "^19.3.0",
