@@ -25,8 +25,10 @@ export function careerSpan(ix: GraphIndex, id: string | null, lib?: LibraryArtis
         .map(([, , year]) => year as number)
     : [];
   const fromLib = (lib?.albums ?? []).map((a) => a.year).filter((y): y is number => !!y && y > 1900);
-  const years = (fromMb.length ? fromMb : fromLib).filter((y) => y <= THIS_YEAR).sort((a, b) => a - b);
   const a = id ? ix.artists[id] : undefined;
+  // Archival and posthumous releases (Miles Davis "albums" into the 2020s) aren't the career.
+  const last = a?.end ? a.end + 1 : THIS_YEAR;
+  const years = (fromMb.length ? fromMb : fromLib).filter((y) => y <= last).sort((a, b) => a - b);
   if (!years.length) {
     if (a?.begin && a.type !== 'Person') return { start: a.begin, end: a.end ?? THIS_YEAR, albumYears: [] };
     return null;

@@ -475,7 +475,7 @@ button.chip { cursor: pointer; }
   border: 1px solid color-mix(in srgb, var(--lane) 70%, transparent);
 }
 .ltl-album { position: absolute; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: color-mix(in srgb, var(--text) 55%, transparent); }
-.ltl-label { position: relative; display: block; line-height: 22px; padding: 0 7px; font-size: 0.78rem; font-weight: 550; white-space: nowrap; color: var(--text); }
+.ltl-label { position: sticky; left: 156px; display: inline-block; line-height: 22px; padding: 0 7px; font-size: 0.78rem; font-weight: 550; white-space: nowrap; color: var(--text); }
 .ltl-bar:hover .ltl-span { filter: brightness(1.12); }
 .ltl-bar.selected .ltl-span { background: var(--lane); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lane) 35%, transparent); }
 .ltl-bar.selected .ltl-label { color: #15141c; font-weight: 700; }
