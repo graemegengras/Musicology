@@ -24,6 +24,7 @@ import {
   nameMatches,
   normalize,
   splitArtistNames,
+  trimDiscography,
   yearOf,
   type MbArtist,
   type MbRelease,
@@ -252,6 +253,7 @@ for (const [i, lib] of targets.entries()) {
     disc.push([al.id, al.title, al.year ?? null, al.type, al.by.length > 1 || al.by[0]?.id !== best.id ? al.by.map((b) => b.name).join(', ') : null]);
     inDisc.add(g.id);
   }
+  graph.discographies[best.id] = trimDiscography(disc, new Set([...matched.values()].map((g) => g.id)));
   for (const la of lib.albums) {
     const g = matched.get(la.title);
     if (!g) continue;

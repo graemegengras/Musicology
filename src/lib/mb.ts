@@ -405,3 +405,29 @@ export function albumFromGroup(g: MbReleaseGroup): Album {
 
 export const coverUrl = (releaseGroupId: string, size: 250 | 500 = 250) =>
   `https://coverartarchive.org/release-group/${releaseGroupId}/front-${size}`;
+
+/**
+ * Big catalogues carry hundreds of compilations and live sets (the Grateful Dead have ~900
+ * release groups). Keep every studio album/EP/mixtape/soundtrack and anything in `keep`
+ * (e.g. library albums); cap the rest per kind, earliest first.
+ */
+export function trimDiscography<T extends [string, string, number | null, string, string | null]>(
+  entries: T[],
+  keep: Set<string> = new Set(),
+  caps: { compilation: number; live: number; other: number } = { compilation: 25, live: 40, other: 10 },
+): T[] {
+  const bucket = (type: string): keyof typeof caps | null =>
+    /Compilation/.test(type) ? 'compilation' : /Live/.test(type) ? 'live' : /Interview|Audiobook|Audio drama|Spokenword|Field recording/.test(type) ? 'other' : null;
+  const used = { compilation: 0, live: 0, other: 0 };
+  const byYear = [...entries].sort((a, b) => (a[2] ?? 9999) - (b[2] ?? 9999));
+  const kept = new Set<string>();
+  for (const e of byYear) {
+    const b = bucket(e[3]);
+    if (!b || keep.has(e[0])) kept.add(e[0]);
+    else if (used[b] < caps[b]) {
+      used[b]++;
+      kept.add(e[0]);
+    }
+  }
+  return entries.filter((e) => kept.has(e[0]));
+}
