@@ -8,6 +8,7 @@ import { ensureArtist, ensureCredits, retry, type StoreState } from '../lib/stor
 import type { NowPlaying } from '../App';
 import ArtistLink from './ArtistLink';
 import AlbumCredits from './AlbumCredits';
+import CareerTimeline from './CareerTimeline';
 import Constellation from './Constellation';
 import Cover from './Cover';
 
@@ -38,6 +39,21 @@ export default function ArtistView({ store, id, album, trail, onPlay }: Props) {
   }, [album]);
 
   const connections = useMemo(() => connectionsOf(ix, id), [ix, id, store.version]);
+  const [mode, setMode] = useState<'map' | 'time'>(() => {
+    try {
+      return localStorage.getItem('musicology.artistMode') === 'time' ? 'time' : 'map';
+    } catch {
+      return 'map';
+    }
+  });
+  const pickMode = (m: 'map' | 'time') => {
+    setMode(m);
+    try {
+      localStorage.setItem('musicology.artistMode', m);
+    } catch {
+      /* ignore */
+    }
+  };
   const disco = ix.discographies[id] ?? [];
 
   // New artists one step from here, ranked by how many of *your* artists they also touch.
@@ -105,7 +121,19 @@ export default function ArtistView({ store, id, album, trail, onPlay }: Props) {
         </p>
       )}
 
-      <Constellation ix={ix} id={id} connections={connections} />
+      {connections.length > 0 && (
+        <section className="view-switch">
+          <div className="seg" role="tablist" aria-label="Show connections as">
+            <button role="tab" aria-selected={mode === 'map'} className={mode === 'map' ? 'on' : ''} onClick={() => pickMode('map')}>Map</button>
+            <button role="tab" aria-selected={mode === 'time'} className={mode === 'time' ? 'on' : ''} onClick={() => pickMode('time')}>In time</button>
+          </div>
+          {mode === 'map' ? (
+            <Constellation ix={ix} id={id} connections={connections} />
+          ) : (
+            <CareerTimeline ix={ix} id={id} connections={connections} libArtist={store.library?.artists.find((x) => x.name === a.lib)} />
+          )}
+        </section>
+      )}
 
       {nextStops.length > 0 && (
         <section>

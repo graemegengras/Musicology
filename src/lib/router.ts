@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 export type Route =
   | { view: 'library' }
   | { view: 'discover' }
+  | { view: 'timeline' }
   | { view: 'artist'; id: string; album?: string }
   | { view: 'search'; q: string }
   | { view: 'genres'; era?: string };
@@ -14,6 +15,8 @@ export function parseRoute(hash: string): Route {
       return parts[1] ? { view: 'artist', id: parts[1], album: parts[2] || undefined } : { view: 'library' };
     case 'discover':
       return { view: 'discover' };
+    case 'timeline':
+      return { view: 'timeline' };
     case 'search':
       return { view: 'search', q: parts.slice(1).join('/') };
     case 'genres':
@@ -29,6 +32,8 @@ export function href(r: Route): string {
       return `#/artist/${r.id}${r.album ? `/${r.album}` : ''}`;
     case 'discover':
       return '#/discover';
+    case 'timeline':
+      return '#/timeline';
     case 'search':
       return `#/search/${encodeURIComponent(r.q)}`;
     case 'genres':
