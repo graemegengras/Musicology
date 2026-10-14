@@ -68,3 +68,22 @@ describe('graph index', () => {
     expect(pathBetween(ix, 'sv', 'karriem')).toBeNull();
   });
 });
+
+describe('careerSpan', () => {
+  it('stops at death or break-up, ignoring archival releases', async () => {
+    const { careerSpan } = await import('../src/lib/careers');
+    const ix = buildIndex({
+      ...data,
+      artists: { miles: { name: 'Miles Davis', type: 'Person', end: 1991 } },
+      discographies: {
+        miles: [
+          ['a', 'Birth of the Cool', 1957, 'Album', null],
+          ['b', 'Doo-Bop', 1992, 'Album', null],
+          ['c', 'Rubberband', 2019, 'Album', null],
+          ['d', 'Live Box', 2005, 'Live', null],
+        ],
+      },
+    });
+    expect(careerSpan(ix, 'miles')).toEqual({ start: 1957, end: 1992, albumYears: [1957, 1992] });
+  });
+});

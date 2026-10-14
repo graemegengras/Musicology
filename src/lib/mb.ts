@@ -100,6 +100,8 @@ export function normalizeTitle(title: string): string {
       .replace(/\s+-\s+.*\b(?:remaster(?:ed)?|edition|version)\b.*$/i, ''),
   )
     .replace(/\bvolume\b/g, 'vol')
+    .replace(/\b(vol|no) (\d)/g, '$2')
+    .replace(/(\d) (?:and|to) (\d)/g, '$1 $2')
     .replace(/\b(?:part|prt)\b/g, 'pt')
     .replace(/\s+(?:ep|lp)$/, '');
 }
