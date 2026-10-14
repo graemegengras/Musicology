@@ -21,6 +21,7 @@
   - Done: `npm run import-library -- Library.xml` → `src/data/library.json` (artists, albums, plays, genres, feat. links; no file paths). The user OK'd committing their library to the public repo.
   - Phase 2 (artist explorer) built: Library home (your artists by plays, genre filter, "one step from what you play"), artist pages (constellation map of connections, "next stops" = new artists one hop away ranked by ties to your library, grouped connections, discography with covers, per-album personnel inline), Discover (ranked one-step-away list with "via" reasons), search (local + live MusicBrainz), path trail, Genres tab = the old timeline.
   - Data: `npm run build-graph -- --top 600 --credits` (MusicBrainz, cached in .mbcache, ~1 req/s) → public/data/graph.json + credits.json. Anything outside the prebuilt graph is fetched live in the browser (src/lib/mbLive.ts, rate-limited queue).
+  - Feedback: missing the chronological aspect. Added a Timeline tab (library artists as bars from first to latest album, lanes by family of music, drag/zoom, click to draw connections, card to open the artist) and an "In time" mode on artist pages (career axis with albums; one row per connection showing when paths crossed: band years and shared records).
   - In progress: full graph build running via a background agent. public/data not committed yet; commit it when the run finishes.
 
 ## Next ideas

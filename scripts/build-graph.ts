@@ -10,6 +10,8 @@
  * public/data/credits.json.
  */
 import { createHash } from 'node:crypto';
+import { resolve as resolvePath } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import type { LibrarySummary } from '../src/lib/appleLibrary.ts';
 import {
@@ -20,6 +22,7 @@ import {
   creditsFromReleases,
   matchAlbums,
   nameMatches,
+  normalize,
   splitArtistNames,
   yearOf,
   type MbArtist,
@@ -33,9 +36,13 @@ const TOP = Number(args[args.indexOf('--top') + 1]) || 600;
 const WITH_CREDITS = args.includes('--credits');
 const ROOT = new URL('..', import.meta.url);
 const CACHE = new URL('.mbcache/', ROOT);
-const OUT = new URL('public/data/', ROOT);
+// Periodic saves go to a gitignored staging dir; only a completed run publishes to --out.
+const OUT = args.includes('--out')
+  ? pathToFileURL(resolvePath(args[args.indexOf('--out') + 1]) + '/')
+  : new URL('public/data/', ROOT);
+const STAGE = new URL('out/', CACHE);
 mkdirSync(CACHE, { recursive: true });
-mkdirSync(OUT, { recursive: true });
+mkdirSync(STAGE, { recursive: true });
 
 /** Keep only what creditsFromReleases reads: release-browse pages can be ~1 MB each. */
 const slimReleases = (page: { releases?: any[]; 'release-count'?: number }) => {
@@ -124,9 +131,9 @@ const touch = (id: string, name: string, type?: string | null): GraphArtist => {
 };
 
 const albumWork: { artistId: string; groupId: string; plays: number }[] = [];
-const save = () => {
-  writeFileSync(new URL('graph.json', OUT), JSON.stringify(graph));
-  if (WITH_CREDITS) writeFileSync(new URL('credits.json', OUT), JSON.stringify(credits));
+const save = (dir: URL = STAGE) => {
+  writeFileSync(new URL('graph.json', dir), JSON.stringify(graph));
+  if (WITH_CREDITS) writeFileSync(new URL('credits.json', dir), JSON.stringify(credits));
 };
 
 interface Resolution {
@@ -137,14 +144,19 @@ interface Resolution {
 
 /** Find the MusicBrainz artist for a library name, using album overlap to pick among namesakes. */
 async function resolve(name: string, titles: string[]): Promise<Resolution | null> {
-  const q = encodeURIComponent(`artist:"${name.replace(/["\\]/g, '')}"`);
-  const search = await mb<{ artists?: MbArtist[] }>(`/artist?query=${q}&limit=15`);
-  const candidates = nameMatches(search.artists ?? [], name).slice(0, 5);
+  const searchFor = async (n: string) => {
+    const q = encodeURIComponent(`artist:"${n.replace(/["\\]/g, '')}"`);
+    const search = await mb<{ artists?: MbArtist[] }>(`/artist?query=${q}&limit=15`);
+    return nameMatches(search.artists ?? [], name).slice(0, 5);
+  };
+  let candidates = await searchFor(name);
+  // "The Red Hot Chili Peppers": the phrase search misses "Red Hot Chili Peppers".
+  if (!candidates.length && /^the\s/i.test(name)) candidates = await searchFor(name.replace(/^the\s+/i, ''));
   if (!candidates.length) return null;
   let best: Resolution | null = null;
   for (const c of candidates) {
     const groups = await allReleaseGroups(c.id);
-    const score = albumOverlap(titles, groups);
+    const score = albumOverlap(titles, groups, name);
     if (!best || score > best.score) best = { artist: c, groups, score };
     if (candidates.length === 1 || score >= Math.min(3, titles.length)) break;
   }
@@ -213,7 +225,27 @@ for (const [i, lib] of targets.entries()) {
       return [al.id, al.title, al.year ?? null, al.type, al.by.length > 1 || al.by[0]?.id !== best.id ? al.by.map((b) => b.name).join(', ') : null];
     });
   }
-  const matched = matchAlbums(titles, groups);
+  const matched = matchAlbums(titles, groups, best.name);
+  // Albums billed to the artist's own band ("Miles Smiles" is by the Miles Davis Quintet).
+  const left = () => titles.filter((t) => !matched.has(t));
+  if (left().length) {
+    const own = artistLinks(full)
+      .filter((l) => l.kind === 'member' && l.label.startsWith('member of') && normalize(l.other.name).includes(normalize(best.name)))
+      .slice(0, 4);
+    for (const band of own) {
+      if (!left().length) break;
+      for (const [t, g] of matchAlbums(left(), await allReleaseGroups(band.other.id), band.other.name)) matched.set(t, g);
+    }
+  }
+  // Library singles and band albums aren't in the artist's album list yet; add them so they can be shown.
+  const disc = (graph.discographies[best.id] ??= []);
+  const inDisc = new Set(disc.map((d) => d[0]));
+  for (const g of new Set(matched.values())) {
+    if (inDisc.has(g.id)) continue;
+    const al = albumFromGroup(g);
+    disc.push([al.id, al.title, al.year ?? null, al.type, al.by.length > 1 || al.by[0]?.id !== best.id ? al.by.map((b) => b.name).join(', ') : null]);
+    inDisc.add(g.id);
+  }
   for (const la of lib.albums) {
     const g = matched.get(la.title);
     if (!g) continue;
@@ -254,4 +286,7 @@ if (WITH_CREDITS) {
   const withCredits = Object.values(credits).filter((c) => c.length).length;
   console.log(`Credits for ${withCredits}/${work.length} albums, ${requests - phase1Requests} requests`);
 }
+mkdirSync(OUT, { recursive: true });
+save(OUT);
+console.log(`Wrote ${OUT.pathname}graph.json${WITH_CREDITS ? ' and credits.json' : ''}`);
 console.log(`Done. ${Object.keys(graph.artists).length} artists in graph, ${requests} network requests.`);

@@ -139,7 +139,7 @@ h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; colo
 .timeline-scroll { flex: 1; overflow: auto; overscroll-behavior: contain; }
 .timeline-scroll { cursor: grab; user-select: none; }
 .timeline-scroll.dragging { cursor: grabbing; }
-.timeline-scroll.dragging .era { pointer-events: none; }
+.timeline-scroll.dragging button { pointer-events: none; }
 .timeline-canvas { position: relative; }
 
 .zoom-controls {
@@ -319,7 +319,7 @@ button.chip:hover { background: color-mix(in srgb, var(--lane, var(--accent)) 22
 .tabs a:hover { color: var(--text); text-decoration: none; }
 .tabs a[aria-current='page'] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.15); }
 .main { overflow-y: auto; }
-.view-genres .main { overflow: hidden; }
+.view-genres .main, .view-timeline .main { overflow: hidden; }
 .page { width: min(1120px, 100%); margin: 0 auto; padding: 28px 24px 64px; display: flex; flex-direction: column; gap: 28px; }
 .page h1 { font-size: 2.1rem; line-height: 1.1; margin: 0 0 6px; letter-spacing: -0.02em; text-wrap: balance; }
 .section-title { font-size: 1.05rem; margin: 0 0 4px; display: flex; align-items: baseline; gap: 10px; }
@@ -463,3 +463,53 @@ button.chip { cursor: pointer; }
   .album-credits > .cover { width: 160px; }
   .constellation svg { min-height: 300px; }
 }
+
+/* ───────── Library timeline ───────── */
+.ltl { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.ltl .genres-tools { justify-content: flex-start; gap: 10px; flex-wrap: wrap; }
+.ltl .timeline { position: relative; }
+.ltl-bar { position: absolute; height: 22px; padding: 0; border: 0; background: transparent; text-align: left; z-index: 2; transition: opacity 0.15s; }
+.ltl-span {
+  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; min-width: 6px;
+  background: color-mix(in srgb, var(--lane) calc(var(--a) * 100%), transparent);
+  border: 1px solid color-mix(in srgb, var(--lane) 70%, transparent);
+}
+.ltl-album { position: absolute; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: color-mix(in srgb, var(--text) 55%, transparent); }
+.ltl-label { position: relative; display: block; line-height: 22px; padding: 0 7px; font-size: 0.78rem; font-weight: 550; white-space: nowrap; color: var(--text); }
+.ltl-bar:hover .ltl-span { filter: brightness(1.12); }
+.ltl-bar.selected .ltl-span { background: var(--lane); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lane) 35%, transparent); }
+.ltl-bar.selected .ltl-label { color: #15141c; font-weight: 700; }
+.ltl-bar.related .ltl-label { font-weight: 700; }
+.ltl-bar.faded { opacity: 0.22; }
+.ltl-bar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 5px; }
+.ltl-edge { fill: none; stroke: var(--k); stroke-width: 1.8; opacity: 0.85; }
+.ltl-card {
+  position: absolute; left: 16px; bottom: 16px; z-index: 8; width: min(340px, calc(100% - 32px));
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.3); display: flex; flex-direction: column; gap: 6px; align-items: flex-start;
+}
+.ltl-card h2 { margin: 0; font-size: 1.2rem; padding-right: 26px; }
+.ltl-card p { margin: 0; }
+
+/* ───────── Career timeline (artist page, "In time") ───────── */
+.view-switch { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.view-switch > :not(.seg) { width: 100%; }
+.career { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px 16px; display: flex; flex-direction: column; }
+.career-row { display: grid; grid-template-columns: 190px 1fr; align-items: center; min-height: 26px; }
+.career-row + .career-row { border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent); }
+.career-axis { min-height: 22px; border-top: 0 !important; }
+.career-name { font-size: 0.84rem; font-weight: 600; color: var(--text); display: flex; gap: 7px; align-items: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 10px; }
+.career-name.new { color: var(--muted); font-weight: 550; }
+.career-centre .career-name { font-size: 0.95rem; font-weight: 750; }
+.career-track { position: relative; height: 100%; min-height: 26px; }
+.career-tick { position: absolute; top: 2px; transform: translateX(-50%); font-size: 0.7rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.career-grid { position: absolute; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--border) 55%, transparent); }
+.career-span { position: absolute; top: 50%; height: 8px; margin-top: -4px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 40%, transparent); }
+.career-span.faint { height: 4px; margin-top: -2px; background: color-mix(in srgb, var(--muted) 30%, transparent); }
+.career-band { position: absolute; top: 50%; height: 10px; margin-top: -5px; border-radius: 5px; background: var(--k); opacity: 0.85; }
+.career-album, .career-mark { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; padding: 0; border-radius: 50%; border: 2px solid var(--surface); cursor: pointer; }
+.career-album { background: var(--muted); }
+.career-album.mine { background: var(--accent); }
+.career-mark { background: var(--k); }
+.career-album:hover, .career-mark:hover, .career-album:focus-visible, .career-mark:focus-visible { transform: scale(1.4); outline: none; box-shadow: 0 0 0 2px var(--text); }
+@media (max-width: 900px) { .career-row { grid-template-columns: 110px 1fr; } }

@@ -90,6 +90,22 @@ describe('album matching', () => {
     expect(albumOverlap(['Brown Sugar (Deluxe Edition)', 'Yasuke', 'Live at the Cirkus'], groups)).toBe(2);
   });
 
+  it('extends a short title to a unique best-ranked longer one', () => {
+    const miles: MbReleaseGroup[] = [
+      { id: 'cookin', title: 'Cookin’ With the Miles Davis Quintet', 'primary-type': 'Album' },
+      { id: 'nickel', title: 'Cookin’ at the Plugged Nickel', 'primary-type': 'Album', 'secondary-types': ['Live'] },
+      { id: 'mood', title: 'Moodswing', 'primary-type': 'Album' },
+    ];
+    const m = matchAlbums(["Cookin'", 'Mood'], miles);
+    expect(m.get("Cookin'")?.id).toBe('cookin');
+    expect(m.has('Mood')).toBe(false); // too short to extend safely
+  });
+
+  it('drops a leading artist name from the library title', () => {
+    const madlib: MbReleaseGroup[] = [{ id: 'ms1', title: 'Medicine Show No. 1: Before the Verdict', 'primary-type': 'Album' }];
+    expect(matchAlbums(['Madlib Medicine Show No. 1: Before The Verdict'], madlib, 'Madlib').get('Madlib Medicine Show No. 1: Before The Verdict')?.id).toBe('ms1');
+  });
+
   it('albumFromGroup flags secondary types', () => {
     expect(albumFromGroup(groups[2])).toMatchObject({ id: 'comp', type: 'Compilation', by: [] });
     expect(albumFromGroup(groups[3])).toMatchObject({ type: 'Album', year: 1995 });

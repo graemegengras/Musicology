@@ -125,21 +125,34 @@ const groupRank = (g: MbReleaseGroup) =>
  * loose key. When several groups share a title (album + single of the same name, or a
  * compilation), prefer the studio album, then EP, then single, then the earliest.
  */
-export function matchAlbums(libraryAlbums: string[], groups: MbReleaseGroup[]): Map<string, MbReleaseGroup> {
+export function matchAlbums(libraryAlbums: string[], groups: MbReleaseGroup[], artistName?: string): Map<string, MbReleaseGroup> {
   const ordered = [...groups].sort(
     (a, b) => groupRank(a) - groupRank(b) || (a['first-release-date'] || '9999').localeCompare(b['first-release-date'] || '9999'),
   );
   const strict = new Map<string, MbReleaseGroup>();
   const loose = new Map<string, MbReleaseGroup>();
-  for (const g of ordered) {
-    const k = normalizeTitle(g.title);
+  const keyed = ordered.map((g) => ({ g, k: normalizeTitle(g.title) }));
+  for (const { g, k } of keyed) {
     if (k && !strict.has(k)) strict.set(k, g);
     const l = looseTitle(g.title);
     if (l && !loose.has(l)) loose.set(l, g);
   }
+  const who = artistName ? normalize(artistName) : '';
+  const find = (t: string): MbReleaseGroup | undefined => {
+    const k = normalizeTitle(t);
+    const l = looseTitle(t);
+    const hit = strict.get(k) ?? (l.length >= 3 ? loose.get(l) : undefined);
+    if (hit || k.length < 6) return hit;
+    // "Cookin'" → "Cookin' With the Miles Davis Quintet": a unique best-ranked title that extends it.
+    const ext = keyed.filter((x) => x.k.startsWith(k + ' '));
+    if (ext.length && ext.filter((x) => groupRank(x.g) === groupRank(ext[0].g)).length === 1) return ext[0].g;
+    return undefined;
+  };
   const out = new Map<string, MbReleaseGroup>();
   for (const t of libraryAlbums) {
-    const g = strict.get(normalizeTitle(t)) ?? (looseTitle(t).length >= 3 ? loose.get(looseTitle(t)) : undefined);
+    let g = find(t);
+    // "Madlib Medicine Show No. 1" → "Medicine Show No. 1"
+    if (!g && who && normalize(t).startsWith(who + ' ')) g = find(normalize(t).slice(who.length + 1));
     if (g) out.set(t, g);
   }
   return out;
@@ -161,8 +174,8 @@ export function nameMatches(candidates: MbArtist[], libraryName: string): MbArti
 }
 
 /** How many of the library's album titles appear in this discography. */
-export function albumOverlap(libraryAlbums: string[], groups: MbReleaseGroup[]): number {
-  return matchAlbums(libraryAlbums, groups).size;
+export function albumOverlap(libraryAlbums: string[], groups: MbReleaseGroup[], artistName?: string): number {
+  return matchAlbums(libraryAlbums, groups, artistName).size;
 }
 
 /**

@@ -4,6 +4,7 @@ import ArtistSearch from './components/ArtistSearch';
 import ArtistView from './components/ArtistView';
 import DiscoverView from './components/DiscoverView';
 import GenresView from './components/GenresView';
+import LibraryTimeline from './components/LibraryTimeline';
 import LibraryView from './components/LibraryView';
 import Player from './components/Player';
 import SearchView from './components/SearchView';
@@ -54,6 +55,7 @@ export default function App() {
         </a>
         <nav className="tabs" aria-label="Views">
           <a href={href({ view: 'library' })} aria-current={tab === 'library' ? 'page' : undefined}>Library</a>
+          <a href={href({ view: 'timeline' })} aria-current={tab === 'timeline' ? 'page' : undefined}>Timeline</a>
           <a href={href({ view: 'discover' })} aria-current={tab === 'discover' ? 'page' : undefined}>Discover</a>
           <a href={href({ view: 'genres' })} aria-current={tab === 'genres' ? 'page' : undefined}>Genres</a>
         </nav>
@@ -71,6 +73,7 @@ export default function App() {
       <main className="main">
         {route.view === 'library' && <LibraryView store={store} />}
         {route.view === 'discover' && <DiscoverView store={store} />}
+        {route.view === 'timeline' && <LibraryTimeline store={store} />}
         {route.view === 'search' && <SearchView store={store} q={route.q} />}
         {route.view === 'artist' && (
           <ArtistView key={route.id} store={store} id={route.id} album={route.album} trail={trail} onPlay={play} />
