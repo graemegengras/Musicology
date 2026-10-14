@@ -19,7 +19,9 @@
 - Feedback round 1 (user): timeline should start at Baroque, drag to pan, no quiz, no welcome sidebar. Main goal is now an artist-level explorer based on the user's Apple Music library.
   - Done: timeline 1600–today (pre-Baroque eras dropped), click-and-drag panning, quiz + welcome removed, era details in a closable drawer (Esc), tours in a menu.
   - Done: `npm run import-library -- Library.xml` → `src/data/library.json` (artists, albums, plays, genres, feat. links; no file paths). The user OK'd committing their library to the public repo.
-  - Next (phase 2): artist explorer from the library. MusicBrainz for members/collaborations/discographies/personnel, Cover Art Archive for covers. Library artists are home base; show connections and paths out to new artists. Blocked: musicbrainz.org + coverartarchive.org must be allowed in the cloud environment's network settings; waiting on the user's Library.xml.
+  - Phase 2 (artist explorer) built: Library home (your artists by plays, genre filter, "one step from what you play"), artist pages (constellation map of connections, "next stops" = new artists one hop away ranked by ties to your library, grouped connections, discography with covers, per-album personnel inline), Discover (ranked one-step-away list with "via" reasons), search (local + live MusicBrainz), path trail, Genres tab = the old timeline.
+  - Data: `npm run build-graph -- --top 600 --credits` (MusicBrainz, cached in .mbcache, ~1 req/s) → public/data/graph.json + credits.json. Anything outside the prebuilt graph is fetched live in the browser (src/lib/mbLive.ts, rate-limited queue).
+  - In progress: full graph build running via a background agent. public/data not committed yet; commit it when the run finishes.
 
 ## Next ideas
 - Verify the player in a real browser; tune the compact/expanded embed heights.

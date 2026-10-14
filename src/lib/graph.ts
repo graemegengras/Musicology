@@ -71,6 +71,42 @@ export function inverseLabel(label: string): string {
   return label;
 }
 
+/**
+ * Turn a raw link label ("A <label> B", from MusicBrainz's direction) into a short
+ * description of B's role, shown under B's name on A's page.
+ */
+export function describeOther(raw: string): string {
+  const m = raw.match(/^(.+?)(?: \((.+)\))?$/)!;
+  const [, base, attrs] = m;
+  const withAttrs = (word: string) => (attrs ? `${word} · ${attrs}` : word);
+  switch (base) {
+    case 'member of':
+      return attrs ? `band · played ${attrs}` : 'band';
+    case 'member':
+      return withAttrs('member');
+    case 'part of':
+      return 'project';
+    case 'includes':
+    case 'collaboration with':
+      return 'collaborator';
+    case 'backed by':
+      return attrs ?? 'backing musician';
+    case 'parent of':
+      return 'child';
+    case 'child of':
+      return 'parent';
+    case 'teacher of':
+      return 'student';
+    case 'student of':
+      return 'teacher';
+    case 'also known as':
+    case 'performs as':
+      return 'same person, other name';
+    default:
+      return base.endsWith(' for') ? `played ${base.replace(/^played /, '')}` : raw;
+  }
+}
+
 export function emptyIndex(): GraphIndex {
   return { artists: {}, adj: new Map(), albums: new Map(), discographies: {}, libraryAlbums: {}, credits: {}, byName: new Map() };
 }
@@ -109,8 +145,9 @@ function connect(
 
 export function addLinks(ix: GraphIndex, links: GraphData['links']) {
   for (const [from, to, kind, label, begin, end] of links) {
-    connect(ix, from, to, kind, label, { begin, end });
-    connect(ix, to, from, kind, inverseLabel(label), { begin, end });
+    const years = begin ? ` (${begin}${end && end !== begin ? `–${end}` : ''})` : '';
+    connect(ix, from, to, kind, describeOther(label) + years, { begin, end });
+    connect(ix, to, from, kind, describeOther(inverseLabel(label)) + years, { begin, end });
   }
 }
 

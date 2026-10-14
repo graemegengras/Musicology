@@ -55,6 +55,7 @@ export interface MbReleaseGroup {
 export interface MbRelease {
   id: string;
   title: string;
+  'artist-credit'?: MbArtistCredit[];
   date?: string;
   status?: string;
   relations?: MbRelation[];
@@ -84,16 +85,64 @@ export function normalize(s: string): string {
 }
 
 const EDITION =
-  /\s*[([](?:[^)\]]*\b(?:deluxe|remaster(?:ed)?|expanded|edition|anniversary|bonus|version|reissue|mono|stereo|explicit|clean|special|collector'?s?|instrumentals?)\b[^)\]]*)[)\]]\s*/gi;
+  /\s*[([](?:[^)\]]*\b(?:deluxe|remaster(?:ed)?|expanded|edition|anniversary|bonus|version|reissue|mono|stereo|explicit|clean|special|collector'?s?|instrumentals?|feat\.?|featuring)\b[^)\]]*)[)\]]\s*/gi;
 
-/** Album titles as streaming services mangle them: "Foo (Deluxe Edition) - EP" → "foo". */
+/**
+ * Album titles as streaming services mangle them: "Foo (Deluxe Edition) - EP" → "foo".
+ * Also folds "Volume"/"Vol." and "Part"/"Pt."/"Prt." and drops a trailing "EP"/"LP" word.
+ */
 export function normalizeTitle(title: string): string {
   return normalize(
     title
+      .replace(/∆/g, 'a')
       .replace(EDITION, ' ')
       .replace(/\s+-\s+(?:EP|Single)$/i, '')
       .replace(/\s+-\s+.*\b(?:remaster(?:ed)?|edition|version)\b.*$/i, ''),
+  )
+    .replace(/\bvolume\b/g, 'vol')
+    .replace(/\b(?:part|prt)\b/g, 'pt')
+    .replace(/\s+(?:ep|lp)$/, '');
+}
+
+/**
+ * Looser key for a second matching pass: drops every bracketed part and any " - …" or ": …"
+ * subtitle, and ignores spacing ("HexualSealings" = "Hexual Sealings").
+ */
+export function looseTitle(title: string): string {
+  const stripped = title
+    .replace(/\s*[([][^)\]]*[)\]]\s*/g, ' ')
+    .replace(/\s+[-–—:]\s+.*$/, '')
+    .replace(/:\s.*$/, '');
+  return (normalizeTitle(stripped) || normalizeTitle(title)).replace(/\s+/g, '');
+}
+
+const TYPE_RANK: Record<string, number> = { Album: 0, EP: 1, Single: 2 };
+const groupRank = (g: MbReleaseGroup) =>
+  (TYPE_RANK[g['primary-type'] ?? ''] ?? 3) * 10 + (g['secondary-types']?.length ? 5 : 0);
+
+/**
+ * Pair library album titles with release groups: exact normalized title first, then the
+ * loose key. When several groups share a title (album + single of the same name, or a
+ * compilation), prefer the studio album, then EP, then single, then the earliest.
+ */
+export function matchAlbums(libraryAlbums: string[], groups: MbReleaseGroup[]): Map<string, MbReleaseGroup> {
+  const ordered = [...groups].sort(
+    (a, b) => groupRank(a) - groupRank(b) || (a['first-release-date'] || '9999').localeCompare(b['first-release-date'] || '9999'),
   );
+  const strict = new Map<string, MbReleaseGroup>();
+  const loose = new Map<string, MbReleaseGroup>();
+  for (const g of ordered) {
+    const k = normalizeTitle(g.title);
+    if (k && !strict.has(k)) strict.set(k, g);
+    const l = looseTitle(g.title);
+    if (l && !loose.has(l)) loose.set(l, g);
+  }
+  const out = new Map<string, MbReleaseGroup>();
+  for (const t of libraryAlbums) {
+    const g = strict.get(normalizeTitle(t)) ?? (looseTitle(t).length >= 3 ? loose.get(looseTitle(t)) : undefined);
+    if (g) out.set(t, g);
+  }
+  return out;
 }
 
 export function yearOf(date?: string | null): number | undefined {
@@ -113,8 +162,20 @@ export function nameMatches(candidates: MbArtist[], libraryName: string): MbArti
 
 /** How many of the library's album titles appear in this discography. */
 export function albumOverlap(libraryAlbums: string[], groups: MbReleaseGroup[]): number {
-  const titles = new Set(groups.map((g) => normalizeTitle(g.title)));
-  return libraryAlbums.filter((t) => titles.has(normalizeTitle(t))).length;
+  return matchAlbums(libraryAlbums, groups).size;
+}
+
+/**
+ * Parts of a library name that credits several artists ("Freddie Gibbs & Madlib",
+ * "João Gilberto; Stan Getz"). Only for names that didn't resolve as a whole, since
+ * plenty of real band names contain "&" or commas.
+ */
+export function splitArtistNames(name: string): string[] {
+  const parts = name
+    .split(/\s*(?:;|,|\s&\s|\sand\s|\sx\s|\swith\s|\sfeat\.?\s|\sft\.?\s|\s\+\s)\s*/i)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.length > 1 ? parts : [];
 }
 
 // ───────────────────────── Graph pieces ─────────────────────────
@@ -139,7 +200,9 @@ export function artistLinks(artist: MbArtist): ArtistLink[] {
   for (const r of artist.relations ?? []) {
     if (r['target-type'] !== 'artist' || !r.artist) continue;
     const fwd = r.direction === 'forward';
-    const attrs = (r.attributes ?? []).filter((a) => !['original', 'founder', 'additional', 'guest', 'minor'].includes(a));
+    const attrs = (r.attributes ?? [])
+      .filter((a) => !['original', 'founder', 'additional', 'guest', 'minor', 'eponymous'].includes(a))
+      .map(prettyInstrument);
     const begin = yearOf(r.begin);
     const end = yearOf(r.end);
     let kind: EdgeKind;
@@ -162,7 +225,8 @@ export function artistLinks(artist: MbArtist): ArtistLink[] {
         break;
       case 'is person':
         kind = 'collab';
-        label = fwd ? 'also known as' : 'performs as';
+        // forward: the person performs as the target name; backward: this is a stage name of the target.
+        label = fwd ? 'performs as' : 'also known as';
         break;
       case 'teacher':
         kind = 'family';
@@ -205,15 +269,33 @@ const ROLE_TYPES = new Set([
   'sound',
   'mastering',
   'remixer',
-  'misc',
 ]);
-const TECHNICAL = new Set(['mix', 'recording', 'engineer', 'audio', 'sound', 'mastering']);
+/** Role names (as produced by creditsFromReleases) that are studio work rather than music-making. */
+const TECHNICAL = new Set(['mixing', 'recording', 'engineer', 'mastering', 'mix', 'sound', 'audio']);
+
+const INSTRUMENT_NAMES: Record<string, string> = {
+  'drums (drum set)': 'drums',
+  membranophone: 'drums',
+  'electric bass guitar': 'bass',
+  'bass guitar': 'bass',
+  'electric guitar': 'guitar',
+  keyboard: 'keyboards',
+  'other vocals': 'vocals',
+  'Wurlitzer electric piano': 'Wurlitzer',
+  'Fender Rhodes': 'Rhodes',
+  'Rhodes piano': 'Rhodes',
+};
+
+/** MusicBrainz instrument names as people say them: "drums (drum set)" → "drums". */
+export function prettyInstrument(name: string): string {
+  return INSTRUMENT_NAMES[name] ?? name;
+}
 
 function roleName(r: MbRelation): string | null {
   const raw = r.attributes ?? [];
   // Assistants and executive producers add noise without telling you who made the music.
   if (raw.includes('assistant') || raw.includes('executive')) return null;
-  const attrs = raw.filter((a) => !['additional', 'guest', 'solo', 'co'].includes(a));
+  const attrs = [...new Set(raw.filter((a) => !['additional', 'guest', 'solo', 'co', 'task'].includes(a)).map(prettyInstrument))];
   switch (r.type) {
     case 'instrument':
       return attrs.join(', ') || 'instruments';
@@ -227,8 +309,12 @@ function roleName(r: MbRelation): string | null {
       return attrs.length ? `${attrs.join(', ')} arrangement` : 'arrangement';
     case 'vocal arranger':
       return 'vocal arrangement';
+    case 'arranger':
+      return 'arrangement';
     case 'performing orchestra':
       return 'orchestra';
+    case 'mix':
+      return 'mixing';
     case 'audio':
     case 'sound':
     case 'engineer':
@@ -239,36 +325,39 @@ function roleName(r: MbRelation): string | null {
 }
 
 export function isTechnicalRole(role: string): boolean {
-  return TECHNICAL.has(role) || role === 'engineer';
+  return TECHNICAL.has(role);
 }
+
+const FEAT_JOIN = /\b(?:feat|ft|featuring|with)\b/i;
 
 /**
  * Personnel for a release group, merged across its releases
  * (browse /release?release-group=…&inc=artist-rels+recordings+recording-level-rels+artist-credits).
- * Different releases carry different credits, so take the union.
+ * Different releases carry different credits, so take the union. Track artists who aren't
+ * the album's own credited artists count as "featured".
  */
 export function creditsFromReleases(releases: MbRelease[]): Credit[] {
   const byArtist = new Map<string, { artist: MbArtistRef; roles: Set<string>; tracks: Set<string> }>();
   const add = (artist: MbArtistRef, role: string | null, trackKey?: string) => {
     if (!role) return;
     const e = byArtist.get(artist.id) ?? { artist, roles: new Set(), tracks: new Set() };
-    e.roles.add(role);
+    for (const r of role.split(', ')) e.roles.add(r);
     if (trackKey) e.tracks.add(trackKey);
     byArtist.set(artist.id, e);
   };
-  for (const rel of releases) {
-    for (const r of rel.relations ?? []) {
-      if (r['target-type'] === 'artist' && r.artist && ROLE_TYPES.has(r.type)) add(r.artist, roleName(r));
-    }
-    for (const m of rel.media ?? []) {
+  const rel = (r: MbRelation) => r['target-type'] === 'artist' && r.artist && ROLE_TYPES.has(r.type);
+  for (const release of releases) {
+    const albumArtists = new Set((release['artist-credit'] ?? []).map((c) => c.artist.id));
+    for (const r of release.relations ?? []) if (rel(r)) add(r.artist!, roleName(r));
+    for (const m of release.media ?? []) {
       for (const t of m.tracks ?? []) {
         const key = normalize(t.recording.title || t.title);
-        for (const r of t.recording.relations ?? []) {
-          if (r['target-type'] === 'artist' && r.artist && ROLE_TYPES.has(r.type)) add(r.artist, roleName(r), key);
-        }
-        // Featured artists on individual tracks.
+        for (const r of t.recording.relations ?? []) if (rel(r)) add(r.artist!, roleName(r), key);
         const ac = t.recording['artist-credit'] ?? t['artist-credit'] ?? [];
-        ac.slice(1).forEach((c) => add(c.artist, 'featured', key));
+        ac.forEach((c, i) => {
+          if (albumArtists.has(c.artist.id) || (i === 0 && !albumArtists.size)) return;
+          add(c.artist, i > 0 && FEAT_JOIN.test(ac[i - 1].joinphrase ?? '') ? 'featured' : 'track artist', key);
+        });
       }
     }
   }
