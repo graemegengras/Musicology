@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Major Version</key><integer>1</integer>
+	<key>Date</key><date>2026-10-14T12:00:00Z</date>
+	<key>Tracks</key>
+	<dict>
+		<key>1</key>
+		<dict>
+			<key>Track ID</key><integer>1</integer>
+			<key>Name</key><string>Paranoid Android</string>
+			<key>Artist</key><string>Radiohead</string>
+			<key>Album</key><string>OK Computer</string>
+			<key>Genre</key><string>Alternative</string>
+			<key>Year</key><integer>1997</integer>
+			<key>Play Count</key><integer>40</integer>
+			<key>Loved</key><true/>
+			<key>Date Added</key><date>2015-03-01T10:00:00Z</date>
+			<key>Location</key><string>file:///Users/someone/Music/x.m4a</string>
+		</dict>
+		<key>2</key>
+		<dict>
+			<key>Name</key><string>Airbag</string>
+			<key>Artist</key><string>Radiohead</string>
+			<key>Album</key><string>OK Computer</string>
+			<key>Genre</key><string>Alternative</string>
+			<key>Year</key><integer>1997</integer>
+			<key>Play Count</key><integer>10</integer>
+		</dict>
+		<key>3</key>
+		<dict>
+			<key>Name</key><string>Love &amp; Hate</string>
+			<key>Artist</key><string>Michael Kiwanuka feat. Tom Misch &amp; Loyle Carner</string>
+			<key>Album</key><string>Love &amp; Hate</string>
+			<key>Genre</key><string>Soul</string>
+			<key>Year</key><integer>2016</integer>
+		</dict>
+		<key>4</key>
+		<dict>
+			<key>Name</key><string>Some Episode</string>
+			<key>Artist</key><string>A Podcast</string>
+			<key>Podcast</key><true/>
+		</dict>
+		<key>5</key>
+		<dict>
+			<key>Name</key><string>Track</string>
+			<key>Artist</key><string>Various Artists</string>
+		</dict>
+	</dict>
+	<key>Playlists</key><array><dict><key>Name</key><string>Library</string></dict></array>
+</dict>
+</plist>

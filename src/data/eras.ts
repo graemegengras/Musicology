@@ -120,74 +120,6 @@ export const ERAS: Era[] = [
 
   // ───────────────────────── Western Art Music ─────────────────────────
   {
-    id: 'ancient-greece',
-    title: 'Ancient Greek music',
-    lane: 'art',
-    start: -600,
-    end: 300,
-    region: 'Greece / Mediterranean',
-    summary:
-      'Music was central to Greek drama, poetry, and philosophy. Pythagoras linked pitch to number. Only fragments of notation survive. The most complete is the Seikilos epitaph, a short song carved on a tombstone around the 1st century CE.',
-    keyFigures: ['Pythagoras', 'Aristoxenus', 'Seikilos'],
-    influences: [],
-    listen: [
-      {
-        title: 'Seikilos Epitaph (modern reconstruction)',
-        performer: 'Aliki Markantonatou',
-        spotify: track('4zoXUCg4DsD2qjBeuXG0iO'),
-        note: 'A modern performance. The original exists only as notation carved in stone.',
-      },
-    ],
-    availability: 'partial',
-    availabilityNote: 'No recordings exist, of course. Only reconstructions from surviving fragments.',
-    links: [wiki('Music_of_ancient_Greece'), wiki('Seikilos_epitaph', 'Seikilos epitaph')],
-  },
-  {
-    id: 'gregorian',
-    title: 'Gregorian chant',
-    lane: 'art',
-    start: 800,
-    end: 1300,
-    region: 'Western Europe',
-    summary:
-      'Monophonic Latin liturgical song of the Western church. It was standardised under the Carolingians, and the need to preserve it led to the invention of staff notation.',
-    keyFigures: ['Guido of Arezzo', 'Hildegard of Bingen'],
-    influences: ['ancient-greece'],
-    listen: [{ title: 'Puer natus est nobis', performer: 'Gregorian Chant', spotify: track('4djnFU43vfQznz78e4xIw2') }],
-    availability: 'spotify',
-    links: [wiki('Gregorian_chant')],
-  },
-  {
-    id: 'notre-dame',
-    title: 'Notre-Dame polyphony',
-    lane: 'art',
-    start: 1160,
-    end: 1250,
-    region: 'Paris',
-    summary:
-      'At Notre-Dame Cathedral, Léonin and Pérotin stacked new melodies over stretched-out chant. These were huge four-voice organa, and some of the first music where rhythm was precisely notated.',
-    keyFigures: ['Léonin', 'Pérotin'],
-    influences: ['gregorian'],
-    listen: [{ title: 'Viderunt omnes', performer: 'The Hilliard Ensemble', year: 'c. 1198', spotify: track('7HoDbWkLiTxyA9s0cz9bUG') }],
-    availability: 'spotify',
-    links: [wiki('Notre-Dame_school'), wiki('Pérotin')],
-  },
-  {
-    id: 'renaissance',
-    title: 'Renaissance',
-    lane: 'art',
-    start: 1400,
-    end: 1600,
-    region: 'Flanders, Italy, England',
-    summary:
-      'Smooth, imitative vocal polyphony. Printing (from 1501) spread music across Europe for the first time. Palestrina’s clarity became the model for sacred music for centuries.',
-    keyFigures: ['Josquin des Prez', 'Palestrina', 'Thomas Tallis', 'William Byrd'],
-    influences: ['notre-dame'],
-    listen: [{ title: 'Missa Papae Marcelli: Kyrie', performer: 'The Tallis Scholars', year: '1562', spotify: track('1Cn5toSyPYqfupygKG6LJx') }],
-    availability: 'spotify',
-    links: [wiki('Renaissance_music'), wiki('Missa_Papae_Marcelli', 'Missa Papae Marcelli')],
-  },
-  {
     id: 'baroque',
     title: 'Baroque',
     lane: 'art',
@@ -197,7 +129,7 @@ export const ERAS: Era[] = [
     summary:
       'Opera was born, along with the concerto and the basso continuo. Major-minor tonality took hold. The era runs from Monteverdi to Bach and Handel.',
     keyFigures: ['Claudio Monteverdi', 'Antonio Vivaldi', 'J. S. Bach', 'G. F. Handel'],
-    influences: ['renaissance'],
+    influences: [],
     listen: [{ title: 'Brandenburg Concertos', performer: 'Orchestra of the Age of Enlightenment', year: '1721', spotify: album('5jMYJmjUYMHvuWhJTjitaD') }],
     availability: 'spotify',
     links: [wiki('Baroque_music'), wiki('Brandenburg_Concertos', 'Brandenburg Concertos')],
@@ -269,7 +201,7 @@ export const ERAS: Era[] = [
     title: 'West African griot traditions',
     lane: 'roots',
     start: 1300,
-    end: 2000,
+    end: 2026,
     region: 'Mali, Senegal, Guinea, the Gambia',
     summary:
       'Hereditary musician-historians (griots, or jali) carried the history of the Mali Empire in song, accompanied by the kora and balafon. Through the transatlantic slave trade, West African rhythm, call-and-response, and blue notes became the foundation of most music in the Americas.',

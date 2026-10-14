@@ -59,7 +59,6 @@ export const TOURS: Tour[] = [
     title: 'Off the Grid',
     blurb: 'Crucial music you won’t find on Spotify, and where to hear it instead.',
     steps: [
-      { eraId: 'ancient-greece', note: 'The oldest complete song is carved on a tombstone. We only have reconstructions.' },
       { eraId: 'phonautograph', note: 'A voice recorded in 1860, rediscovered in an archive and first heard in 2008.' },
       { eraId: 'cylinders', note: 'Tens of thousands of early recordings live in free library archives.' },
       { eraId: 'new-orleans-jazz', note: 'Buddy Bolden, the first jazz star, was never recorded at all.' },
@@ -70,13 +69,10 @@ export const TOURS: Tour[] = [
     ],
   },
   {
-    id: 'thousand-years',
-    title: 'A Thousand Years of Western Art Music',
-    blurb: 'From one melodic line to a tidal wave of pulses.',
+    id: 'bach-to-reich',
+    title: 'From Bach to Reich',
+    blurb: 'Three and a half centuries of European concert music, and how it came back to the pulse.',
     steps: [
-      { eraId: 'gregorian', note: 'One melody, no harmony, no meter. Just the text.' },
-      { eraId: 'notre-dame', note: 'Add voices above the chant. Polyphony is born.' },
-      { eraId: 'renaissance', note: 'Polyphony perfected: every voice equal.' },
       { eraId: 'baroque', note: 'A bass line drives everything, and opera and the concerto appear.' },
       { eraId: 'classical', note: 'Elegant architecture: sonata form.' },
       { eraId: 'romantic', note: 'Emotion, the virtuoso, and the giant orchestra.' },

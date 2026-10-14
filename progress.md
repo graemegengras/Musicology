@@ -16,6 +16,11 @@
 - Added GitHub Pages deploy workflow (on push to main), relative asset paths, plain `#<era-id>` share links, explicit light/dark theme guards.
   - Live at https://graemegengras.github.io/Musicology/ (repo made public, Pages source = GitHub Actions). Every push to main redeploys.
 
+- Feedback round 1 (user): timeline should start at Baroque, drag to pan, no quiz, no welcome sidebar. Main goal is now an artist-level explorer based on the user's Apple Music library.
+  - Done: timeline 1600–today (pre-Baroque eras dropped), click-and-drag panning, quiz + welcome removed, era details in a closable drawer (Esc), tours in a menu.
+  - Done: `npm run import-library -- Library.xml` → `src/data/library.json` (artists, albums, plays, genres, feat. links; no file paths). The user OK'd committing their library to the public repo.
+  - Next (phase 2): artist explorer from the library. MusicBrainz for members/collaborations/discographies/personnel, Cover Art Archive for covers. Library artists are home base; show connections and paths out to new artists. Blocked: musicbrainz.org + coverartarchive.org must be allowed in the cloud environment's network settings; waiting on the user's Library.xml.
+
 ## Next ideas
 - Verify the player in a real browser; tune the compact/expanded embed heights.
 - More eras: non-Western traditions (Hindustani/Carnatic, gamelan, Afrobeat, highlife, bossa nova, K-pop, Latin), 2000s+.
