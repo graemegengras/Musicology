@@ -11,6 +11,7 @@ import {
   normalize,
   normalizeTitle,
   splitArtistNames,
+  trimDiscography,
   type MbArtist,
   type MbRelation,
   type MbRelease,
@@ -264,5 +265,25 @@ describe('creditsFromReleases', () => {
   it('flags studio roles as technical', () => {
     expect(['mixing', 'mastering', 'recording', 'engineer'].every(isTechnicalRole)).toBe(true);
     expect(['drums', 'producer', 'featured'].some(isTechnicalRole)).toBe(false);
+  });
+});
+
+describe('trimDiscography', () => {
+  type E = [string, string, number | null, string, string | null];
+  const disc: E[] = [
+    ['a1', 'Studio', 1970, 'Album', null],
+    ...Array.from({ length: 30 }, (_, i): E => [`c${i}`, `Best Of ${i}`, 1980 + i, 'Compilation', null]),
+    ['live1', 'Live 1', 1975, 'Live', null],
+    ['lib', 'Library Comp', 2020, 'Compilation', null],
+  ];
+
+  it('keeps studio work and library albums, caps compilations earliest first', () => {
+    const out = trimDiscography(disc, new Set(['lib']), { compilation: 5, live: 40, other: 0 });
+    const ids = out.map((e) => e[0]);
+    expect(ids).toContain('a1');
+    expect(ids).toContain('live1');
+    expect(ids).toContain('lib');
+    expect(ids.filter((id) => id.startsWith('c'))).toEqual(['c0', 'c1', 'c2', 'c3', 'c4']);
+    expect(out[0][0]).toBe('a1'); // original order preserved
   });
 });
