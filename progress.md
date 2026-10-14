@@ -22,7 +22,9 @@
   - Phase 2 (artist explorer) built: Library home (your artists by plays, genre filter, "one step from what you play"), artist pages (constellation map of connections, "next stops" = new artists one hop away ranked by ties to your library, grouped connections, discography with covers, per-album personnel inline), Discover (ranked one-step-away list with "via" reasons), search (local + live MusicBrainz), path trail, Genres tab = the old timeline.
   - Data: `npm run build-graph -- --top 600 --credits` (MusicBrainz, cached in .mbcache, ~1 req/s) → public/data/graph.json + credits.json. Anything outside the prebuilt graph is fetched live in the browser (src/lib/mbLive.ts, rate-limited queue).
   - Feedback: missing the chronological aspect. Added a Timeline tab (library artists as bars from first to latest album, lanes by family of music, drag/zoom, click to draw connections, card to open the artist) and an "In time" mode on artist pages (career axis with albums; one row per connection showing when paths crossed: band years and shared records).
-  - In progress: full graph build running via a background agent. public/data not committed yet; commit it when the run finishes.
+  - Full graph built (top 600 artists): 593 resolved, 13,179 artists, 3,494 links, 2,432/2,782 library albums matched, 1,873 albums with personnel. graph.json 3.8 MB (1.6 MB gz), credits.json 1.6 MB. Re-run from cache in ~2 min; a fresh run is ~85 min at MusicBrainz's 1 req/s.
+  - Known gaps: unresolved bsd.u, frank soupy, Graeme Gengras & Basak, Blind Blake, Lars Vegas, Tim Lok Chan, Jason Morran (typo of Jason Moran); "Prince & The Revolution" resolved to The Revolution; ~350 unmatched albums (mostly compilations, Knxwledge tape-series titles, albums billed to a separate band like Robert Glasper Experiment).
+  - Ideas: extend to more of the library (--top 1200), link bands like "Robert Glasper Experiment" to their leader, slim graph.json (split discographies into a lazy file).
 
 ## Next ideas
 - Verify the player in a real browser; tune the compact/expanded embed heights.

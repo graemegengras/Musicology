@@ -154,7 +154,12 @@ async function resolve(name: string, titles: string[]): Promise<Resolution | nul
   const tried = new Set<string>();
   for (const query of queries) {
     const search = await mb<{ artists?: MbArtist[] }>(`/artist?query=${encodeURIComponent(query)}&limit=15`);
-    const candidates = nameMatches(search.artists ?? [], name).filter((c) => !tried.has(c.id)).slice(0, 5);
+    // Alias hits must share an album anyway, so they needn't match the name exactly
+    // ("Christian Scott" is listed under "Christian Scott aTunde Adjuah").
+    const hits = search.artists ?? [];
+    const named = nameMatches(hits, name);
+    if (query.startsWith('alias:')) named.push(...hits.filter((c) => (c.score ?? 100) >= 90 && !named.includes(c)).slice(0, 2));
+    const candidates = named.filter((c) => !tried.has(c.id)).slice(0, 5);
     if (!candidates.length) continue;
     let best: Resolution | null = null;
     for (const c of candidates) {
@@ -199,6 +204,8 @@ for (const [i, lib] of targets.entries()) {
   if (known) {
     // A second library name for the same artist ("Mndsgn." / "Mndsgn", or a joint billing).
     a.plays = (a.plays ?? 0) + lib.plays;
+    // Prefer the plain name over a joint billing ("Freddie Gibbs" over "Freddie Gibbs & The Alchemist").
+    if (a.lib && normalize(lib.name) === normalize(a.name) && normalize(a.lib) !== normalize(a.name)) a.lib = lib.name;
   } else {
     a.lib = lib.name;
     a.plays = lib.plays;
