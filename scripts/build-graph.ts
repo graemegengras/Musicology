@@ -144,25 +144,31 @@ interface Resolution {
 
 /** Find the MusicBrainz artist for a library name, using album overlap to pick among namesakes. */
 async function resolve(name: string, titles: string[]): Promise<Resolution | null> {
-  const searchFor = async (n: string) => {
-    const q = encodeURIComponent(`artist:"${n.replace(/["\\]/g, '')}"`);
-    const search = await mb<{ artists?: MbArtist[] }>(`/artist?query=${q}&limit=15`);
-    return nameMatches(search.artists ?? [], name).slice(0, 5);
-  };
-  let candidates = await searchFor(name);
+  const clean = name.replace(/["\\]/g, '');
+  const queries = [`artist:"${clean}"`];
   // "The Red Hot Chili Peppers": the phrase search misses "Red Hot Chili Peppers".
-  if (!candidates.length && /^the\s/i.test(name)) candidates = await searchFor(name.replace(/^the\s+/i, ''));
-  if (!candidates.length) return null;
-  let best: Resolution | null = null;
-  for (const c of candidates) {
-    const groups = await allReleaseGroups(c.id);
-    const score = albumOverlap(titles, groups, name);
-    if (!best || score > best.score) best = { artist: c, groups, score };
-    if (candidates.length === 1 || score >= Math.min(3, titles.length)) break;
+  if (/^the\s/i.test(clean)) queries.push(`artist:"${clean.replace(/^the\s+/i, '')}"`);
+  // "Mos Def" is Yasiin Bey; the artist field doesn't search aliases.
+  queries.push(`alias:"${clean}"`);
+  const tried = new Set<string>();
+  for (const query of queries) {
+    const search = await mb<{ artists?: MbArtist[] }>(`/artist?query=${encodeURIComponent(query)}&limit=15`);
+    const candidates = nameMatches(search.artists ?? [], name).filter((c) => !tried.has(c.id)).slice(0, 5);
+    if (!candidates.length) continue;
+    let best: Resolution | null = null;
+    for (const c of candidates) {
+      tried.add(c.id);
+      const groups = await allReleaseGroups(c.id);
+      const score = albumOverlap(titles, groups, name);
+      if (!best || score > best.score) best = { artist: c, groups, score };
+      if (candidates.length === 1 || score >= Math.min(3, titles.length)) break;
+    }
+    // With several same-named artists and no album in common, we can't tell which one this is.
+    // Alias hits are looser, so they always need an album in common.
+    if ((candidates.length > 1 || query.startsWith('alias:')) && best!.score === 0 && titles.length > 0) continue;
+    return best;
   }
-  // With several same-named artists and no album in common, we can't tell which one this is.
-  if (candidates.length > 1 && best!.score === 0 && titles.length > 0) return null;
-  return best;
+  return null;
 }
 
 const linkSeen = new Set<string>();
